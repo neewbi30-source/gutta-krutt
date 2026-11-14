@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gutta krutt</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --blue: #0a84ff;
+    --blue-hover: #409cff;
+    --red: #ff5f57;
+    --yellow: #febc2e;
+    --green: #28c840;
+    --menu-h: 28px;
+    --dock-h: 88px;
+    --radius: 12px;
+    --bg:
+      radial-gradient(ellipse 90% 70% at 12% 18%, rgba(255, 170, 200, 0.7), transparent 55%),
+      radial-gradient(ellipse 80% 60% at 88% 12%, rgba(160, 190, 255, 0.75), transparent 50%),
+      radial-gradient(ellipse 70% 70% at 72% 82%, rgba(255, 190, 140, 0.65), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 18% 88%, rgba(120, 220, 230, 0.55), transparent 50%),
+      linear-gradient(180deg, #b9c6e8 0%, #d5c4e8 42%, #f0c9c0 100%);
+    --menu-bg: rgba(246, 246, 246, 0.72);
+    --menu-fg: #1d1d1f;
+    --menu-border: rgba(0, 0, 0, 0.08);
+    --window-bg: rgba(255, 255, 255, 0.82);
+    --window-bar: rgba(255, 255, 255, 0.62);
+    --window-fg: #1d1d1f;
+    --window-muted: rgba(29, 29, 31, 0.5);
+    --window-line: rgba(0, 0, 0, 0.08);
+    --window-shadow: 0 18px 50px rgba(30, 20, 50, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+    --window-focus: 0 22px 56px rgba(30, 20, 50, 0.3), 0 0 0 1.5px rgba(10, 132, 255, 0.45);
+    --input-bg: rgba(255, 255, 255, 0.92);
+    --input-border: rgba(0, 0, 0, 0.14);
+    --item-hover: rgba(0, 0, 0, 0.04);
+    --dock-bg: rgba(255, 255, 255, 0.55);
+    --dock-border: rgba(255, 255, 255, 0.7);
+    --error: #d70015;
+    --btn-fg: #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:
+        radial-gradient(ellipse 90% 70% at 14% 16%, rgba(90, 40, 110, 0.7), transparent 55%),
+        radial-gradient(ellipse 80% 60% at 88% 10%, rgba(30, 60, 120, 0.75), transparent 50%),
+        radial-gradient(ellipse 70% 70% at 70% 86%, rgba(80, 30, 70, 0.65), transparent 55%),
+        radial-gradient(ellipse 55% 50% at 16% 88%, rgba(20, 70, 90, 0.5), transparent 50%),
+        linear-gradient(180deg, #141628 0%, #1c1630 48%, #201420 100%);
+      --menu-bg: rgba(36, 36, 38, 0.72);
+      --menu-fg: #f5f5f7;
+      --menu-border: rgba(255, 255, 255, 0.08);
+      --window-bg: rgba(44, 44, 46, 0.86);
+      --window-bar: rgba(58, 58, 60, 0.72);
+      --window-fg: #f5f5f7;
+      --window-muted: rgba(245, 245, 247, 0.5);
+      --window-line: rgba(255, 255, 255, 0.08);
+      --window-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+      --window-focus: 0 22px 56px rgba(0, 0, 0, 0.5), 0 0 0 1.5px rgba(10, 132, 255, 0.55);
+      --input-bg: rgba(30, 30, 32, 0.9);
+      --input-border: rgba(255, 255, 255, 0.14);
+      --item-hover: rgba(255, 255, 255, 0.05);
+      --dock-bg: rgba(40, 40, 44, 0.62);
+      --dock-border: rgba(255, 255, 255, 0.12);
+      --error: #ff6961;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--window-fg);
+    background: var(--bg);
+    background-attachment: fixed;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #desktop {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #menubar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: var(--menu-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    background: var(--menu-bg);
+    color: var(--menu-fg);
+    border-bottom: 1px solid var(--menu-border);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    user-select: none;
+  }
+  .menu-left, .menu-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .app-name { font-weight: 620; }
+  #user-label {
+    opacity: 0.75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 28vw;
+  }
+  #clock { font-variant-numeric: tabular-nums; }
+  #logout-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 2px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #logout-btn:hover { background: rgba(127, 127, 127, 0.22); }
+
+  #login-layer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 64px;
+  }
+  #login-layer.hidden, #app.hidden, .hidden { display: none !important; }
+
+  .macos-window {
+    background: var(--window-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--window-shadow);
+    backdrop-filter: saturate(160%) blur(28px);
+    -webkit-backdrop-filter: saturate(160%) blur(28px);
+    overflow: hidden;
+    color: var(--window-fg);
+  }
+  .macos-window.focused { box-shadow: var(--window-focus); }
+
+  .titlebar {
+    height: 38px;
+    display: grid;
+    grid-template-columns: 62px 1fr 62px;
+    align-items: center;
+    background: var(--window-bar);
+    border-bottom: 1px solid var(--window-line);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+  }
+  .traffic {
+    display: flex;
+    gap: 7px;
+    padding-left: 12px;
+    pointer-events: none;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+  }
+  .dot.red { background: var(--red); }
+  .dot.yellow { background: var(--yellow); }
+  .dot.green { background: var(--green); }
+  .titlebar .title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 590;
+    color: var(--window-muted);
+  }
+
+  .login-window { width: min(400px, 100%); }
+  .login-window .window-body {
+    padding: 28px 28px 32px;
+    text-align: center;
+  }
+  .login-window h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .login-window .lead {
+    margin: 0 0 22px;
+    color: var(--window-muted);
+    font-size: 14px;
+  }
+  .field {
+    text-align: left;
+    margin-bottom: 12px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 560;
+    margin-bottom: 5px;
+    color: var(--window-muted);
+  }
+  input, button { font-family: inherit; }
+  input[type="email"], input[type="password"], input[type="text"] {
+    width: 100%;
+    font-size: 15px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--window-fg);
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.28);
+  }
+  #login-btn, .add-btn {
+    appearance: none;
+    border: 0;
+    background: var(--blue);
+    color: var(--btn-fg);
+    font-weight: 590;
+    cursor: pointer;
+  }
+  #login-btn {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 15px;
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+  #login-btn:hover, .add-btn:hover { background: var(--blue-hover); }
+  #err {
+    min-height: 1.2em;
+    margin: 12px 0 0;
+    color: var(--error);
+    font-size: 13px;
+  }
+
+  #app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .windows {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+    width: min(1180px, calc(100% - 32px));
+    margin: 28px auto 0;
+    padding-bottom: calc(var(--dock-h) + 16px);
+  }
+  .list-window { min-height: 280px; display: flex; flex-direction: column; }
+  .window-body {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    min-height: 0;
+  }
+  .add {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .add input { flex: 1; }
+  .add-btn {
+    width: 36px;
+    border-radius: 8px;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+  }
+  .items {
+    overflow-y: auto;
+    max-height: min(58vh, 520px);
+    padding-right: 2px;
+  }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--window-line);
+    border-radius: 6px;
+  }
+  .item:hover { background: var(--item-hover); }
+  .item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--blue);
+    flex-shrink: 0;
+  }
+  .item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .item-title { font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+  .item.done .item-title { text-decoration: line-through; opacity: 0.5; }
+  .item small {
+    font-size: 11px;
+    color: var(--window-muted);
+  }
+  .del {
+    appearance: none;
+    border: 0;
+    background: none;
+    color: var(--window-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .del:hover { color: var(--error); background: var(--item-hover); }
+  .empty {
+    color: var(--window-muted);
+    font-size: 13px;
+    padding: 18px 6px;
+    text-align: center;
+  }
+
+  #dock {
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    gap: 10px;
+    padding: 8px 12px 6px;
+    background: var(--dock-bg);
+    border: 1px solid var(--dock-border);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+  }
+  #dock.hidden { display: none !important; }
+  .dock-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--window-fg);
+    cursor: pointer;
+    width: 62px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-family: inherit;
+  }
+  .dock-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    background: linear-gradient(180deg, #ffffff, #e8e8ed);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: transform 0.15s ease;
+  }
+  @media (prefers-color-scheme: dark) {
+    .dock-icon { background: linear-gradient(180deg, #5a5a60, #3a3a40); }
+  }
+  .dock-btn:hover .dock-icon,
+  .dock-btn.active .dock-icon { transform: scale(1.12) translateY(-3px); }
+  .dock-btn span.label {
+    font-size: 10px;
+    color: var(--menu-fg);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (max-width: 860px) {
+    .windows {
+      grid-template-columns: 1fr;
+      width: min(520px, calc(100% - 24px));
+      margin-top: 16px;
+    }
+    .items { max-height: none; }
+    #user-label { max-width: 22vw; }
+  }
+</style>
+</head>
+<body>
+  <div id="desktop">
+    <header id="menubar">
+      <div class="menu-left">
+        <span class="app-name">💥 Gutta krutt</span>
+      </div>
+      <div class="menu-right">
+        <span id="user-label" class="hidden"></span>
+        <button type="button" id="logout-btn" class="hidden">Logg ut</button>
+        <time id="clock"></time>
+      </div>
+    </header>
+
+    <div id="login-layer">
+      <section class="macos-window login-window" role="dialog" aria-labelledby="login-heading">
+        <div class="titlebar">
+          <div class="traffic" aria-hidden="true">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="title">Logg inn</div>
+        </div>
+        <div class="window-body">
+          <h1 id="login-heading">💥 Gutta krutt</h1>
+          <p class="lead">Logg inn med e-post og passord</p>
+          <form id="login-form">
+            <div class="field">
+              <label for="email">E-post</label>
+              <input id="email" name="email" type="email" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label for="pass">Passord</label>
+              <input id="pass" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" id="login-btn">Logg inn</button>
+            <p id="err" hidden></p>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="windows">
+        <section class="macos-window list-window" id="win-gjoremal" data-list="gjoremal">
+          <div class="titlebar">
+            <div class="traffic" aria-hidden="true">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="title">Gjøremål</div>
+          </div>
+          <div class="window-body">
+            <div class="add">
+              <input id="in-gjoremal" type="text" placeholder="Legg til…">
+              <button type="button" class="add-btn" data-list="gjoremal" aria-label="Legg til gjøremål">+</button>
+            </div>
+            <div class="items" id="items-gjoremal"></div>
+          </div>
+        </section>
+
+        <section class="macos-window list-window" id="win-ideer" data-list="ideer">
+          <div class="titlebar">
+            <div class="traffic" aria-hidden="true">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="title">Ideer</div>
+          </div>
+          <div class="window-body">
+            <div class="add">
+              <input id="in-ideer" type="text" placeholder="Legg til…">
+              <button type="button" class="add-btn" data-list="ideer" aria-label="Legg til idé">+</button>
+            </div>
+            <div class="items" id="items-ideer"></div>
+          </div>
+        </section>
+
+        <section class="macos-window list-window" id="win-huskeliste" data-list="huskeliste">
+          <div class="titlebar">
+            <div class="traffic" aria-hidden="true">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="title">Huskeliste</div>
+          </div>
+          <div class="window-body">
+            <div class="add">
+              <input id="in-huskeliste" type="text" placeholder="Legg til…">
+              <button type="button" class="add-btn" data-list="huskeliste" aria-label="Legg til på huskelista">+</button>
+            </div>
+            <div class="items" id="items-huskeliste"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <nav id="dock" class="hidden" aria-label="Lister">
+      <button type="button" class="dock-btn" data-list="gjoremal" title="Gjøremål">
+        <span class="dock-icon" aria-hidden="true">✅</span>
+        <span class="label">Gjøremål</span>
+      </button>
+      <button type="button" class="dock-btn" data-list="ideer" title="Ideer">
+        <span class="dock-icon" aria-hidden="true">💡</span>
+        <span class="label">Ideer</span>
+      </button>
+      <button type="button" class="dock-btn" data-list="huskeliste" title="Huskeliste">
+        <span class="dock-icon" aria-hidden="true">📋</span>
+        <span class="label">Huskeliste</span>
+      </button>
+    </nav>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://yhsuivppqghsgstgzyrw.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inloc3VpdnBwcWdoc2dzdGd6eXJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NzQxMTYsImV4cCI6MjExMDI1MDExNn0.lGy6ssYLEnXFHYXVeB6ccJfv5fnOJYiWW4UuMgGjhO8";
+  const LISTS = ["gjoremal", "ideer", "huskeliste"];
+  const LIST_LABELS = { gjoremal: "Gjøremål", ideer: "Ideer", huskeliste: "Huskeliste" };
+
+  const loginLayer = document.getElementById("login-layer");
+  const appEl = document.getElementById("app");
+  const dockEl = document.getElementById("dock");
+  const userLabel = document.getElementById("user-label");
+  const logoutBtn = document.getElementById("logout-btn");
+  const errEl = document.getElementById("err");
+  const clockEl = document.getElementById("clock");
+
+  if (typeof supabase === "undefined") {
+    errEl.hidden = false;
+    errEl.textContent = "Klarte ikkje å laste Supabase-biblioteket.";
+  }
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let me = null;
+  let itemsChannel = null;
+
+  function tickClock() {
+    const now = new Date();
+    clockEl.dateTime = now.toISOString();
+    clockEl.textContent = now.toLocaleString("nb-NO", {
+      timeZone: "Europe/Oslo",
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  function setError(message) {
+    if (!message) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+      return;
+    }
+    errEl.hidden = false;
+    errEl.textContent = message;
+  }
+
+  async function logIn(event) {
+    event.preventDefault();
+    setError("");
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("pass").value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) setError(error.message);
+  }
+
+  async function logOut() {
+    await sb.auth.signOut();
+  }
+
+  function showLogin() {
+    me = null;
+    loginLayer.classList.remove("hidden");
+    appEl.classList.add("hidden");
+    dockEl.classList.add("hidden");
+    userLabel.classList.add("hidden");
+    userLabel.textContent = "";
+    logoutBtn.classList.add("hidden");
+    if (itemsChannel) {
+      sb.removeChannel(itemsChannel);
+      itemsChannel = null;
+    }
+  }
+
+  function showApp(session) {
+    const email = session.user && session.user.email ? session.user.email : "";
+    me = email.includes("@") ? email.split("@")[0] : email;
+    userLabel.textContent = me;
+    userLabel.classList.remove("hidden");
+    logoutBtn.classList.remove("hidden");
+    loginLayer.classList.add("hidden");
+    appEl.classList.remove("hidden");
+    dockEl.classList.remove("hidden");
+    setError("");
+    load();
+    if (!itemsChannel) {
+      itemsChannel = sb.channel("items")
+        .on("postgres_changes", { event: "*", schema: "public", table: "items" }, load)
+        .subscribe();
+    }
+  }
+
+  async function add(list) {
+    const input = document.getElementById("in-" + list);
+    const title = input.value.trim();
+    if (!title) return;
+    const { error } = await sb.from("items").insert({ list, title, created_by: me });
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    input.value = "";
+    load();
+  }
+
+  async function toggle(id, done) {
+    const { error } = await sb.from("items").update({ done: !done }).eq("id", id);
+    if (error) setError(error.message);
+    else load();
+  }
+
+  async function remove(id) {
+    const { error } = await sb.from("items").delete().eq("id", id);
+    if (error) setError(error.message);
+    else load();
+  }
+
+  function renderItem(item) {
+    const row = document.createElement("div");
+    row.className = "item" + (item.done ? " done" : "");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !!item.done;
+    checkbox.setAttribute("aria-label", "Merk som " + (item.done ? "ikke gjort" : "gjort"));
+    checkbox.addEventListener("change", function () {
+      toggle(item.id, item.done);
+    });
+
+    const text = document.createElement("div");
+    text.className = "item-text";
+
+    const title = document.createElement("span");
+    title.className = "item-title";
+    title.textContent = item.title || "";
+
+    const by = document.createElement("small");
+    by.textContent = item.created_by || "";
+
+    text.appendChild(title);
+    if (item.created_by) text.appendChild(by);
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "del";
+    del.setAttribute("aria-label", "Slett");
+    del.textContent = "✕";
+    del.addEventListener("click", function () {
+      remove(item.id);
+    });
+
+    row.appendChild(checkbox);
+    row.appendChild(text);
+    row.appendChild(del);
+    return row;
+  }
+
+  async function load() {
+    const { data, error } = await sb.from("items").select("*").order("created_at");
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    LISTS.forEach(function (list) {
+      const box = document.getElementById("items-" + list);
+      box.replaceChildren();
+      const rows = (data || []).filter(function (item) { return item.list === list; });
+      if (!rows.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Ingenting her enno";
+        box.appendChild(empty);
+        return;
+      }
+      rows.forEach(function (item) {
+        box.appendChild(renderItem(item));
+      });
+    });
+  }
+
+  function focusList(list) {
+    const win = document.getElementById("win-" + list);
+    if (!win) return;
+    document.querySelectorAll(".list-window").forEach(function (el) {
+      el.classList.toggle("focused", el === win);
+    });
+    document.querySelectorAll(".dock-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-list") === list);
+    });
+    win.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }
+
+  document.getElementById("login-form").addEventListener("submit", logIn);
+  logoutBtn.addEventListener("click", logOut);
+
+  document.querySelectorAll(".add-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      add(btn.getAttribute("data-list"));
+    });
+  });
+  LISTS.forEach(function (list) {
+    const input = document.getElementById("in-" + list);
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        add(list);
+      }
+    });
+  });
+  document.querySelectorAll(".dock-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      focusList(btn.getAttribute("data-list"));
+    });
+  });
+
+  sb.auth.onAuthStateChange(function (_event, session) {
+    if (session) showApp(session);
+    else showLogin();
+  });
+</script>
+</body>
+</html>
